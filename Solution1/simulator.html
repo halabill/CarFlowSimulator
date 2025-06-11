@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>車道行駛模擬器 (v7 - 正確路徑版)</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            background-color: #f0f0f0;
+            padding: 20px;
+            gap: 30px;
+        }
+
+        #simulator-container {
+            position: relative;
+            width: 960px;
+            height: 540px;
+            background-image: url('original_image.jpg');
+            background-size: 100% 100%;
+            border: 2px solid #333;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .car {
+            position: absolute;
+            width: 28px;
+            height: 50px;
+            border: 1px solid black;
+            border-radius: 8px;
+            transition: all 0.05s linear;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            box-shadow: 0 -2px 5px rgba(255, 255, 100, 0.7);
+            transform-origin: center center;
+        }
+        .car::before {
+            content: ''; width: 80%; height: 50%; margin-top: 5px;
+            background: rgba(0,0,0,0.2); border-radius: 4px;
+        }
+
+        #car-red {
+            background-color: #e74c3c;
+            top: 110px;
+            left: 420px;
+            transform: rotate(305deg);
+        }
+
+        #car-orange {
+            background-color: #f39c12;
+            top: 450px;
+            left: 215px;
+            transform: rotate(0deg);
+        }
+        
+        .induction-loop {
+            position: absolute;
+            border: 3px solid red;
+            background-color: rgba(255, 0, 0, 0.2);
+            box-sizing: border-box;
+        }
+        
+        #induction-loop-1 {
+            top: 158px;
+            left: 338px;
+            width: 140px;
+            height: 10px;
+            transform: rotate(-48deg);
+            transform-origin: left center;
+        }
+
+        #induction-loop-2 {
+            top: 369px;
+            left: 162px;
+            width: 125px;
+            height: 10px;
+        }
+
+        .traffic-light {
+            position: absolute;
+            background-color: #2c3e50;
+            padding: 5px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .light {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: #7f8c8d;
+            transition: background-color 0.3s;
+        }
+        .light.red.active { background-color: #e74c3c; box-shadow: 0 0 10px #e74c3c; }
+        .light.yellow.active { background-color: #f1c40f; box-shadow: 0 0 10px #f1c40f; }
+        .light.green.active { background-color: #2ecc71; box-shadow: 0 0 10px #2ecc71; }
+
+        #traffic-light-1 { top: 90px; left: 500px; }
+        #traffic-light-2 { top: 220px; left: 290px; }
+        #traffic-light-3 { top: 380px; left: 290px; }
+
+        #control-panel {
+            width: 280px; padding: 20px; background-color: #fff;
+            border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: flex; flex-direction: column; gap: 20px;
+        }
+        #control-panel h3 {
+            margin: 0; text-align: center; color: #34495e;
+            border-bottom: 1px solid #ddd; padding-bottom: 10px;
+        }
+        .control-group { display: flex; flex-direction: column; gap: 10px; }
+        .control-group label { font-weight: bold; color: #555; }
+        .control-group input[type="range"] { width: 100%; }
+        .control-group button {
+            padding: 10px 15px; font-size: 16px; border: none;
+            border-radius: 5px; color: white; cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .control-group button:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+        #btn-start-red { background-color: #c0392b; }
+        #btn-start-red:hover:not(:disabled) { background-color: #e74c3c; }
+        #btn-start-orange { background-color: #d35400; }
+        #btn-start-orange:hover:not(:disabled) { background-color: #f39c12; }
+        
+        #special-controls {
+            border-top: 1px solid #ddd; padding-top: 20px;
+        }
+        #btn-start-both {
+            width: 100%; background-color: #8e44ad;
+        }
+        #btn-start-both:hover:not(:disabled) {
+            background-color: #9b59b6;
+        }
+    </style>
+</head>
+<body>
+    <div id="simulator-container">
+        <div id="car-red" class="car"></div>
+        <div id="car-orange" class="car"></div>
+        <div id="induction-loop-1" class="induction-loop"></div>
+        <div id="induction-loop-2" class="induction-loop"></div>
+        <div id="traffic-light-1" class="traffic-light">
+            <div class="light red"></div><div class="light yellow"></div><div class="light green"></div>
+        </div>
+        <div id="traffic-light-2" class="traffic-light">
+            <div class="light red"></div><div class="light yellow"></div><div class="light green"></div>
+        </div>
+        <div id="traffic-light-3" class="traffic-light">
+            <div class="light red"></div><div class="light yellow"></div><div class="light green"></div>
+        </div>
+    </div>
+
+    <div id="control-panel">
+        <h3>控制面板 (v7)</h3>
+        <div class="control-group">
+            <label for="speed-red">紅色車速度: <span id="speed-red-value">20</span></label>
+            <input type="range" id="speed-red" min="10" max="100" value="20">
+            <button id="btn-start-red">啟動紅色車</button>
+        </div>
+        <div class="control-group">
+            <label for="speed-orange">橘色車速度: <span id="speed-orange-value">20</span></label>
+            <input type="range" id="speed-orange" min="10" max="100" value="20">
+            <button id="btn-start-orange">啟動橘色車</button>
+        </div>
+        <div id="special-controls" class="control-group">
+            <button id="btn-start-both">兩車同時出發 (壓力測試)</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Elements ---
+            const carRed = document.getElementById('car-red');
+            const carOrange = document.getElementById('car-orange');
+            const lights = {
+                '1': { red: document.querySelector('#traffic-light-1 .red'), green: document.querySelector('#traffic-light-1 .green') },
+                '2': { red: document.querySelector('#traffic-light-2 .red'), green: document.querySelector('#traffic-light-2 .green') },
+                '3': { red: document.querySelector('#traffic-light-3 .red'), green: document.querySelector('#traffic-light-3 .green') }
+            };
+            const btnStartRed = document.getElementById('btn-start-red');
+            const btnStartOrange = document.getElementById('btn-start-orange');
+            const btnStartBoth = document.getElementById('btn-start-both');
+            const speedSliderRed = document.getElementById('speed-red');
+            const speedSliderOrange = document.getElementById('speed-orange');
+            const speedValueRed = document.getElementById('speed-red-value');
+            const speedValueOrange = document.getElementById('speed-orange-value');
+
+            // --- State & Config ---
+            let isPathBusy = false;
+            let redCarSpeed = 20;
+            let orangeCarSpeed = 20;
+            let redAnimation, orangeAnimation;
+
+            // v7: Path completely re-engineered to include the semi-circle
+            const redCarStartPosition = { x: 420, y: 110, angle: 305 };
+            const orangeCarStartPosition = { x: 215, y: 450, angle: 0 };
+            
+            const masterPath = [
+                // 1. From start, curve left into the top of the semi-circle
+                { x: 420, y: 110, angle: 305 }, { x: 380, y: 100, angle: 270 },
+                { x: 340, y: 95, angle: 225 }, { x: 290, y: 105, angle: 180 },
+                
+                // 2. The large semi-circle path (counter-clockwise)
+                { x: 250, y: 110, angle: 180 }, // Continue left
+                { x: 210, y: 125, angle: 145 }, // Start curving down-right
+                { x: 195, y: 160, angle: 110 },
+                { x: 195, y: 190, angle: 90 },  // Pointing straight down
+                
+                // 3. Merge from semi-circle into the final straight path
+                { x: 200, y: 220, angle: 70 },
+                { x: 215, y: 240, angle: 90 }, // Straighten out, pointing down
+                
+                // 4. Final straight path to the end
+                { x: 215, y: 280, angle: 90 }, { x: 215, y: 320, angle: 90 },
+                { x: 215, y: 370, angle: 90 }, { x: 215, y: 420, angle: 90 },
+                { x: 215, y: 470, angle: 90 }, { x: 215, y: 500, angle: 90 } // End
+            ];
+
+            // --- Core Functions ---
+            function setAllLights(state) {
+                Object.values(lights).forEach(lightSet => {
+                    if (state === 'green') {
+                        lightSet.green.classList.add('active');
+                        lightSet.red.classList.remove('active');
+                    } else if (state === 'red') {
+                        lightSet.green.classList.remove('active');
+                        lightSet.red.classList.add('active');
+                    } else { // off
+                         lightSet.green.classList.remove('active');
+                         lightSet.red.classList.remove('active');
+                    }
+                });
+            }
+
+            function animateCar(car, path, speed, onComplete) {
+                let currentStep = 0;
+                const intervalDuration = 120 - speed;
+                const intervalId = setInterval(() => {
+                    if (currentStep >= path.length) {
+                        clearInterval(intervalId);
+                        if(onComplete) onComplete();
+                        return;
+                    }
+                    const { x, y, angle } = path[currentStep];
+                    car.style.left = `${x}px`;
+                    car.style.top = `${y}px`;
+                    car.style.transform = `rotate(${angle}deg)`;
+                    currentStep++;
+                }, intervalDuration);
+                return intervalId;
+            }
+
+            function setButtonsState(enabled) {
+                btnStartRed.disabled = !enabled;
+                btnStartOrange.disabled = !enabled;
+                btnStartBoth.disabled = !enabled;
+            }
+
+            function resetSimulation() {
+                isPathBusy = false;
+                clearInterval(redAnimation);
+                clearInterval(orangeAnimation);
+
+                carRed.style.left = `${redCarStartPosition.x}px`;
+                carRed.style.top = `${redCarStartPosition.y}px`;
+                carRed.style.transform = `rotate(${redCarStartPosition.angle}deg)`;
+
+                carOrange.style.left = `${orangeCarStartPosition.x}px`;
+                carOrange.style.top = `${orangeCarStartPosition.y}px`;
+                carOrange.style.transform = `rotate(${orangeCarStartPosition.angle}deg)`;
+                
+                setAllLights('green');
+                setButtonsState(true);
+            }
+
+            // --- Event Listeners (Logic remains the same) ---
+            btnStartRed.addEventListener('click', () => {
+                if (isPathBusy) return;
+                isPathBusy = true;
+                setButtonsState(false);
+                
+                lights['1'].green.classList.add('active');
+                lights['2'].red.classList.add('active');
+                lights['3'].red.classList.add('active');
+
+                redAnimation = animateCar(carRed, masterPath, redCarSpeed, () => {
+                    setTimeout(resetSimulation, 1000);
+                });
+            });
+
+            btnStartOrange.addEventListener('click', () => {
+                if (isPathBusy) return;
+                isPathBusy = true;
+                setButtonsState(false);
+
+                lights['3'].green.classList.add('active');
+                lights['2'].red.classList.add('active');
+                lights['1'].red.classList.add('active');
+
+                const pathForOrange = [...masterPath].reverse().map(p => ({
+                    x: p.x, y: p.y, angle: (p.angle + 180) % 360
+                }));
+
+                orangeAnimation = animateCar(carOrange, pathForOrange, orangeCarSpeed, () => {
+                    setTimeout(resetSimulation, 1000);
+                });
+            });
+
+            btnStartBoth.addEventListener('click', () => {
+                if (isPathBusy) return;
+                isPathBusy = true;
+                setButtonsState(false);
+                setAllLights('off');
+                
+                const pathForOrange = [...masterPath].reverse().map(p => ({
+                    x: p.x, y: p.y, angle: (p.angle + 180) % 360
+                }));
+                
+                let redDone = false, orangeDone = false;
+                const checkCompletion = () => {
+                    if (redDone && orangeDone) {
+                         setTimeout(resetSimulation, 1000);
+                    }
+                };
+
+                redAnimation = animateCar(carRed, masterPath, redCarSpeed, () => { redDone = true; checkCompletion(); });
+                orangeAnimation = animateCar(carOrange, pathForOrange, orangeCarSpeed, () => { orangeDone = true; checkCompletion(); });
+            });
+
+            speedSliderRed.addEventListener('input', (e) => {
+                redCarSpeed = parseInt(e.target.value, 10);
+                speedValueRed.textContent = redCarSpeed;
+            });
+            speedSliderOrange.addEventListener('input', (e) => {
+                orangeCarSpeed = parseInt(e.target.value, 10);
+                speedValueOrange.textContent = orangeCarSpeed;
+            });
+
+            // --- Initial Setup ---
+            resetSimulation();
+        });
+    </script>
+</body>
+</html>

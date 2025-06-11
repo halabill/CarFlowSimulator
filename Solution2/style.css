@@ -1,0 +1,26 @@
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #222;
+}
+
+#simCanvas {
+  display: block;
+  margin: 0 auto;
+  background: #000;
+}
+
+#controlPanel {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+#controlPanel label {
+  display: block;
+  margin: 5px 0;
+}

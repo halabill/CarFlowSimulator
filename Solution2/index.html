@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>單線紅綠燈模擬器</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="simCanvas" width="1080" height="768"></canvas>
+
+  <div id="controlPanel">
+    <label>紅車速度：
+      <input type="range" id="car1Speed" min="0.5" max="5" step="0.1" value="2">
+    </label>
+    <label>橘車速度：
+      <input type="range" id="car2Speed" min="0.5" max="5" step="0.1" value="2">
+    </label>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
