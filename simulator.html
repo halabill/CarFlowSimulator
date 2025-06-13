@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智慧車道模擬器 (計時版)</title>
+    <title>智慧車道模擬器 (最終版)</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -188,7 +188,7 @@
     </div>
 
     <div id="control-panel">
-        <h3>智慧車道控制器 (計時版)</h3>
+        <h3>智慧車道控制器 (最終版)</h3>
         <div class="control-group toggle-group">
             <div class="toggle-container">
                 <span>遵守號誌</span>
@@ -203,13 +203,17 @@
             </div>
         </div>
         <div class="control-group">
-            <label for="speed-red">紅色車速度: <span id="speed-red-value">5</span></label>
-            <input type="range" id="speed-red" min="1" max="10" value="5">
+            <!-- ======================= 修改點 1 & 2 ======================= -->
+            <label for="speed-red">紅色車速度: <span id="speed-red-value">3</span></label>
+            <input type="range" id="speed-red" min="1" max="10" value="3">
+            <!-- ========================================================= -->
             <button id="btn-start-red">啟動紅色車</button>
         </div>
         <div class="control-group">
-            <label for="speed-yellow">黃色車速度: <span id="speed-yellow-value">5</span></label>
-            <input type="range" id="speed-yellow" min="1" max="10" value="5">
+            <!-- ======================= 修改點 3 & 4 ======================= -->
+            <label for="speed-yellow">黃色車速度: <span id="speed-yellow-value">3</span></label>
+            <input type="range" id="speed-yellow" min="1" max="10" value="3">
+            <!-- ========================================================= -->
             <button id="btn-start-yellow">啟動黃色車</button>
         </div>
         <div class="control-group">
@@ -222,7 +226,7 @@
             const carRedEl = document.getElementById('car-red');
             const carYellowEl = document.getElementById('car-yellow');
             const collisionIconEl = document.getElementById('collision-icon');
-            const timerDisplayEl = document.getElementById('timer-display'); // 獲取計時器元素
+            const timerDisplayEl = document.getElementById('timer-display');
             const lights = {
                 '1': { red: document.querySelector('#traffic-light-1 .red'), green: document.querySelector('#traffic-light-1 .green'), state: 'green' },
                 '2': { red: document.querySelector('#traffic-light-2 .red'), green: document.querySelector('#traffic-light-2 .green'), state: 'green' },
@@ -241,11 +245,9 @@
             let isColliding = false;
             const COLLISION_THRESHOLD = 40;
 
-            // --- 新增的計時器狀態變數 ---
             let timerActive = false;
             let startTime = 0;
             let elapsedTime = 0;
-
 
             obeyToggle.addEventListener('change', (e) => {
                 obeyTrafficLights = e.target.checked;
@@ -259,9 +261,11 @@
             function preprocessPath(path) { for (let i = 0; i < path.length; i++) { if (i === path.length - 1) { path[i].angle = path[i - 1].angle; continue; } const currentPoint = path[i]; const nextPoint = path[i + 1]; const dx = nextPoint.x - currentPoint.x; const dy = nextPoint.y - currentPoint.y; let angleDeg = Math.atan2(dy, dx) * 180 / Math.PI; angleDeg += 90; path[i].angle = angleDeg; } }
             preprocessPath(redPath);
             preprocessPath(yellowPath);
-
-            let carRed = { el: carRedEl, path: redPath, speed: 5, step: 0, active: false, stopAt: [ { step: 12, light: '3' } ], controlTriggers: [ { step: 20, action: () => { setLightState('1', 'red'); setLightState('2', 'red'); }, done: false }, { step: 98, action: () => { setLightState('1', 'green'); setLightState('2', 'green'); }, done: false } ] };
-            let carYellow = { el: carYellowEl, path: yellowPath, speed: 5, step: 0, active: false, stopAt: [ { step: 7, light: '1' }, { step: 43, light: '2' } ], controlTriggers: [ { step: 5, action: () => { setLightState('3', 'red'); }, done: false }, { step: 82, action: () => { setLightState('3', 'green'); }, done: false } ] };
+            
+            // ======================= 修改點 5 =======================
+            let carRed = { el: carRedEl, path: redPath, speed: 3, step: 0, active: false, stopAt: [ { step: 12, light: '3' } ], controlTriggers: [ { step: 20, action: () => { setLightState('1', 'red'); setLightState('2', 'red'); }, done: false }, { step: 98, action: () => { setLightState('1', 'green'); setLightState('2', 'green'); }, done: false } ] };
+            let carYellow = { el: carYellowEl, path: yellowPath, speed: 3, step: 0, active: false, stopAt: [ { step: 7, light: '1' }, { step: 43, light: '2' } ], controlTriggers: [ { step: 5, action: () => { setLightState('3', 'red'); }, done: false }, { step: 82, action: () => { setLightState('3', 'green'); }, done: false } ] };
+            // =========================================================
 
             const resetCarState = (car) => {
                 car.active = false;
@@ -306,7 +310,6 @@
                 btnStartRed.disabled = false;
                 btnStartYellow.disabled = false;
                 
-                // 重置計時器
                 timerActive = false;
                 elapsedTime = 0;
                 startTime = 0;
@@ -329,10 +332,8 @@
                     car.active = false; 
                     if (car === carRed) btnStartRed.disabled = true;
                     if (car === carYellow) btnStartYellow.disabled = true;
-
-                    // 當有車輛停止時，檢查是否所有車都停止了
                     if (!carRed.active && !carYellow.active) {
-                        timerActive = false; // 暫停計時器
+                        timerActive = false;
                         elapsedTime = performance.now() - startTime;
                     }
                     return;
@@ -360,7 +361,6 @@
                 if(carRed.active) { carRedProgress += carRed.speed; if(carRedProgress >= 50) { moveCar(carRed); carRedProgress = 0; } }
                 if(carYellow.active) { carYellowProgress += carYellow.speed; if(carYellowProgress >= 50) { moveCar(carYellow); carYellowProgress = 0; } }
 
-                // --- 計時器更新邏輯 ---
                 if (timerActive) {
                     const currentElapsedTime = (performance.now() - startTime) / 1000;
                     timerDisplayEl.textContent = currentElapsedTime.toFixed(2) + 's';
@@ -393,12 +393,10 @@
             }
 
             function startCar(car, button) {
-                // 如果計時器還沒啟動，就啟動它
                 if (!timerActive && (!carRed.active && !carYellow.active)) {
                     startTime = performance.now();
                     timerActive = true;
                 }
-
                 if (car.step >= car.path.length - 1) {
                     resetCarState(car);
                 }
@@ -414,7 +412,7 @@
             speedSliderRed.addEventListener('input', (e) => { carRed.speed = parseInt(e.target.value, 10); speedValueRed.textContent = carRed.speed; });
             speedSliderYellow.addEventListener('input', (e) => { carYellow.speed = parseInt(e.target.value, 10); speedValueYellow.textContent = carYellow.speed; });
 
-            resetSimulation(); // 初始調用
+            resetSimulation();
             gameLoop();
         });
     </script>
