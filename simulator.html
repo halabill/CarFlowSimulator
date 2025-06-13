@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智慧車道模擬器 (規則修正版)</title>
+    <title>智慧車道模擬器 (碰撞偵測版)</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -146,10 +146,33 @@
         input:checked + .slider:before {
             transform: translateX(24px);
         }
+
+        .collision-icon {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background-color: #e74c3c;
+            color: white;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            font-size: 28px;
+            font-weight: bold;
+            font-family: 'Arial', sans-serif;
+            z-index: 20;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            user-select: none;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
     <div id="simulator-container">
+        <div id="collision-icon" class="collision-icon">!</div>
         <div id="car-red" class="car"></div>
         <div id="car-yellow" class="car"></div>
         <div id="traffic-light-1" class="traffic-light">
@@ -164,8 +187,7 @@
     </div>
 
     <div id="control-panel">
-        <h3>智慧車道控制器 (規則修正版)</h3>
-        
+        <h3>智慧車道控制器 (碰撞偵測版)</h3>
         <div class="control-group toggle-group">
             <span>遵守號誌</span>
             <label class="toggle-switch">
@@ -173,7 +195,6 @@
                 <span class="slider"></span>
             </label>
         </div>
-        
         <div class="control-group">
             <label for="speed-red">紅色車速度: <span id="speed-red-value">5</span></label>
             <input type="range" id="speed-red" min="1" max="10" value="5">
@@ -184,7 +205,6 @@
             <input type="range" id="speed-yellow" min="1" max="10" value="5">
             <button id="btn-start-yellow">啟動黃色車</button>
         </div>
-        
         <div class="control-group">
              <button id="btn-reset" style="background-color: #7f8c8d;">全部重來</button>
         </div>
@@ -194,6 +214,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             const carRedEl = document.getElementById('car-red');
             const carYellowEl = document.getElementById('car-yellow');
+            const collisionIconEl = document.getElementById('collision-icon'); // 獲取圖示元素
             const lights = {
                 '1': { red: document.querySelector('#traffic-light-1 .red'), green: document.querySelector('#traffic-light-1 .green'), state: 'green' },
                 '2': { red: document.querySelector('#traffic-light-2 .red'), green: document.querySelector('#traffic-light-2 .green'), state: 'green' },
@@ -210,35 +231,26 @@
             const obeyToggle = document.getElementById('obey-toggle');
             let obeyTrafficLights = obeyToggle.checked;
 
+            // --- 新增的碰撞偵測相關變數 ---
+            let isColliding = false;
+            const COLLISION_THRESHOLD = 40; // 碰撞距離閾值 (像素)
+
             obeyToggle.addEventListener('change', (e) => {
                 obeyTrafficLights = e.target.checked;
-                console.log(`遵守號誌: ${obeyTrafficLights ? '開啟' : '關閉'}`);
+                // 如果從不遵守變回遵守，要隱藏可能存在的碰撞圖示
+                if (obeyTrafficLights && isColliding) {
+                    hideCollisionIcon();
+                }
             });
 
             const redPath = [ { x: 310, y: 341 }, { x: 310, y: 349 }, { x: 302, y: 350 }, { x: 294, y: 348 }, { x: 286, y: 345 }, { x: 278, y: 343 }, { x: 270, y: 340 }, { x: 263, y: 337 }, { x: 255, y: 332 }, { x: 247, y: 324 }, { x: 239, y: 316 }, { x: 234, y: 308 }, { x: 229, y: 300 }, { x: 224, y: 292 }, { x: 222, y: 285 }, { x: 219, y: 277 }, { x: 217, y: 269 }, { x: 215, y: 261 }, { x: 213, y: 253 }, { x: 212, y: 245 }, { x: 212, y: 238 }, { x: 212, y: 230 }, { x: 212, y: 222 }, { x: 212, y: 214 }, { x: 211, y: 206 }, { x: 211, y: 198 }, { x: 211, y: 190 }, { x: 210, y: 183 }, { x: 210, y: 175 }, { x: 210, y: 167 }, { x: 210, y: 159 }, { x: 208, y: 151 }, { x: 206, y: 143 }, { x: 204, y: 136 }, { x: 199, y: 128 }, { x: 193, y: 120 }, { x: 186, y: 112 }, { x: 178, y: 107 }, { x: 170, y: 105 }, { x: 162, y: 104 }, { x: 155, y: 104 }, { x: 147, y: 104 }, { x: 139, y: 103 }, { x: 131, y: 104 }, { x: 123, y: 104 }, { x: 115, y: 106 }, { x: 107, y: 108 }, { x: 100, y: 111 }, { x: 92, y: 115 }, { x: 84, y: 121 }, { x: 77, y: 129 }, { x: 71, y: 137 }, { x: 67, y: 145 }, { x: 63, y: 152 }, { x: 62, y: 160 }, { x: 62, y: 168 }, { x: 64, y: 176 }, { x: 65, y: 184 }, { x: 67, y: 192 }, { x: 70, y: 200 }, { x: 73, y: 207 }, { x: 77, y: 215 }, { x: 82, y: 223 }, { x: 90, y: 229 }, { x: 98, y: 233 }, { x: 106, y: 236 }, { x: 113, y: 238 }, { x: 121, y: 239 }, { x: 129, y: 242 }, { x: 137, y: 247 }, { x: 145, y: 253 }, { x: 151, y: 261 }, { x: 156, y: 269 }, { x: 159, y: 276 }, { x: 163, y: 284 }, { x: 168, y: 292 }, { x: 170, y: 300 }, { x: 173, y: 308 }, { x: 175, y: 316 }, { x: 178, y: 324 }, { x: 179, y: 331 }, { x: 180, y: 339 }, { x: 180, y: 347 }, { x: 180, y: 355 }, { x: 180, y: 363 }, { x: 180, y: 371 }, { x: 180, y: 378 }, { x: 180, y: 386 }, { x: 180, y: 394 }, { x: 181, y: 402 }, { x: 182, y: 410 }, { x: 183, y: 418 }, { x: 183, y: 426 }, { x: 183, y: 433 }, { x: 183, y: 441 }, { x: 183, y: 449 }, { x: 183, y: 457 }, { x: 183, y: 465 }, { x: 183, y: 473 }, { x: 176, y: 476 }, ];
             const yellowPath = [ { x: 175, y: 475 }, { x: 173, y: 468 }, { x: 173, y: 460 }, { x: 173, y: 452 }, { x: 173, y: 444 }, { x: 173, y: 436 }, { x: 173, y: 428 }, { x: 173, y: 420 }, { x: 172, y: 413 }, { x: 171, y: 405 }, { x: 170, y: 397 }, { x: 170, y: 389 }, { x: 170, y: 381 }, { x: 170, y: 373 }, { x: 170, y: 365 }, { x: 170, y: 358 }, { x: 170, y: 350 }, { x: 169, y: 342 }, { x: 169, y: 334 }, { x: 167, y: 326 }, { x: 165, y: 318 }, { x: 163, y: 310 }, { x: 160, y: 303 }, { x: 156, y: 295 }, { x: 153, y: 287 }, { x: 149, y: 279 }, { x: 144, y: 271 }, { x: 138, y: 263 }, { x: 131, y: 256 }, { x: 124, y: 252 }, { x: 116, y: 249 }, { x: 108, y: 248 }, { x: 100, y: 245 }, { x: 92, y: 242 }, { x: 84, y: 238 }, { x: 76, y: 232 }, { x: 71, y: 225 }, { x: 65, y: 217 }, { x: 62, y: 209 }, { x: 59, y: 201 }, { x: 57, y: 193 }, { x: 55, y: 185 }, { x: 52, y: 177 }, { x: 52, y: 170 }, { x: 52, y: 162 }, { x: 52, y: 154 }, { x: 54, y: 146 }, { x: 57, y: 138 }, { x: 62, y: 130 }, { x: 68, y: 122 }, { x: 74, y: 115 }, { x: 82, y: 107 }, { x: 90, y: 103 }, { x: 98, y: 100 }, { x: 106, y: 97 }, { x: 114, y: 95 }, { x: 122, y: 94 }, { x: 129, y: 93 }, { x: 137, y: 93 }, { x: 145, y: 93 }, { x: 153, y: 94 }, { x: 161, y: 94 }, { x: 169, y: 94 }, { x: 177, y: 96 }, { x: 184, y: 98 }, { x: 192, y: 103 }, { x: 200, y: 111 }, { x: 207, y: 119 }, { x: 212, y: 127 }, { x: 215, y: 135 }, { x: 217, y: 143 }, { x: 219, y: 150 }, { x: 220, y: 158 }, { x: 220, y: 166 }, { x: 220, y: 174 }, { x: 220, y: 182 }, { x: 221, y: 190 }, { x: 221, y: 198 }, { x: 222, y: 205 }, { x: 222, y: 213 }, { x: 222, y: 221 }, { x: 222, y: 229 }, { x: 222, y: 237 }, { x: 223, y: 245 }, { x: 224, y: 253 }, { x: 225, y: 260 }, { x: 227, y: 268 }, { x: 229, y: 276 }, { x: 233, y: 284 }, { x: 237, y: 292 }, { x: 242, y: 300 }, { x: 247, y: 308 }, { x: 253, y: 315 }, { x: 261, y: 323 }, { x: 269, y: 328 }, { x: 277, y: 331 }, { x: 285, y: 333 }, { x: 293, y: 335 }, { x: 301, y: 338 }, { x: 309, y: 340 }, ];
-
             function preprocessPath(path) { for (let i = 0; i < path.length; i++) { if (i === path.length - 1) { path[i].angle = path[i - 1].angle; continue; } const currentPoint = path[i]; const nextPoint = path[i + 1]; const dx = nextPoint.x - currentPoint.x; const dy = nextPoint.y - currentPoint.y; let angleDeg = Math.atan2(dy, dx) * 180 / Math.PI; angleDeg += 90; path[i].angle = angleDeg; } }
             preprocessPath(redPath);
             preprocessPath(yellowPath);
 
-            // 移除了 paused 屬性
-            let carRed = {
-                el: carRedEl, path: redPath, speed: 5, step: 0, active: false,
-                stopAt: [ { step: 12, light: '3' } ], // 紅車只關心 3 號燈
-                controlTriggers: [
-                    { step: 20, action: () => { setLightState('1', 'red'); setLightState('2', 'red'); }, done: false },
-                    { step: 98, action: () => { setLightState('1', 'green'); setLightState('2', 'green'); }, done: false }
-                ]
-            };
-            let carYellow = {
-                el: carYellowEl, path: yellowPath, speed: 5, step: 0, active: false,
-                stopAt: [ { step: 7, light: '1' }, { step: 43, light: '2' } ], // 黃車關心 1, 2 號燈 (校準了2號燈的step)
-                controlTriggers: [
-                    { step: 5, action: () => { setLightState('3', 'red'); }, done: false },
-                    { step: 82, action: () => { setLightState('3', 'green'); }, done: false }
-                ]
-            };
+            let carRed = { el: carRedEl, path: redPath, speed: 5, step: 0, active: false, stopAt: [ { step: 12, light: '3' } ], controlTriggers: [ { step: 20, action: () => { setLightState('1', 'red'); setLightState('2', 'red'); }, done: false }, { step: 98, action: () => { setLightState('1', 'green'); setLightState('2', 'green'); }, done: false } ] };
+            let carYellow = { el: carYellowEl, path: yellowPath, speed: 5, step: 0, active: false, stopAt: [ { step: 7, light: '1' }, { step: 43, light: '2' } ], controlTriggers: [ { step: 5, action: () => { setLightState('3', 'red'); }, done: false }, { step: 82, action: () => { setLightState('3', 'green'); }, done: false } ] };
 
             const resetCarState = (car) => {
                 car.active = false;
@@ -260,55 +272,56 @@
                 light.red.classList.toggle('active', state === 'red');
             }
 
+            // --- 新增的圖示控制函式 ---
+            function showCollisionIcon(x, y) {
+                collisionIconEl.style.left = `${x - collisionIconEl.offsetWidth / 2}px`;
+                collisionIconEl.style.top = `${y - collisionIconEl.offsetHeight / 2}px`;
+                collisionIconEl.style.display = 'flex';
+                // 使用一個微小的延遲來確保 display 先生效，然後再改變 opacity 以觸發 transition
+                setTimeout(() => { collisionIconEl.style.opacity = '1'; }, 10);
+                isColliding = true;
+            }
+            function hideCollisionIcon() {
+                collisionIconEl.style.opacity = '0';
+                // 在淡出動畫結束後再隱藏元素
+                setTimeout(() => { collisionIconEl.style.display = 'none'; }, 300);
+                isColliding = false;
+            }
+
             function resetSimulation() {
-                console.log("全部重來！");
                 resetCarState(carRed);
                 resetCarState(carYellow);
                 setLightState('1', 'green');
                 setLightState('2', 'green');
                 setLightState('3', 'green');
+                hideCollisionIcon(); // 重置時也要隱藏圖示
                 btnStartRed.disabled = false;
                 btnStartYellow.disabled = false;
             }
 
-            // ======================= 最終修正的 moveCar 函式 =======================
             function moveCar(car) {
                 if (!car.active) return;
-
-                // --- 預判停車邏輯 ---
-                // 只有在遵守號誌時才進行預判
                 if (obeyTrafficLights) {
                     const nextStep = car.step + 1;
-                    // 確保下一步存在
                     if (nextStep < car.path.length) {
-                        // 遍歷此車輛需要遵守的停車點
                         for (const stop of car.stopAt) {
-                            // 如果下一步是停車點 且 對應的燈是紅燈
                             if (nextStep === stop.step && lights[stop.light].state === 'red') {
-                                // 不做任何事，直接返回，讓車輛凍結在當前位置
                                 return;
                             }
                         }
                     }
                 }
-
-                // --- 正常移動邏輯 ---
-                // 如果能執行到這裡，代表前方無須停車
                 if (car.step >= car.path.length - 1) {
                     car.active = false; 
                     if (car === carRed) btnStartRed.disabled = true;
                     if (car === carYellow) btnStartYellow.disabled = true;
                     return;
                 }
-
-                // 移動到下一步
                 car.step++;
                 const { x, y, angle } = car.path[car.step];
                 car.el.style.left = `${x - (car.el.offsetWidth / 2)}px`;
                 car.el.style.top = `${y - (car.el.offsetHeight / 2)}px`;
                 car.el.style.transform = `rotate(${angle}deg)`;
-
-                // --- 觸發器邏輯 (不變) ---
                 if (car.controlTriggers) {
                     for (const trigger of car.controlTriggers) {
                         if (!trigger.done && car.step >= trigger.step) {
@@ -318,15 +331,45 @@
                     }
                 }
             }
-            // =======================================================================
-
 
             let animationFrameId;
             let carRedProgress = 0;
             let carYellowProgress = 0;
+
             function gameLoop() {
+                // 車輛移動
                 if(carRed.active) { carRedProgress += carRed.speed; if(carRedProgress >= 50) { moveCar(carRed); carRedProgress = 0; } }
                 if(carYellow.active) { carYellowProgress += carYellow.speed; if(carYellowProgress >= 50) { moveCar(carYellow); carYellowProgress = 0; } }
+
+                // --- 碰撞偵測邏輯 ---
+                // 只有在不遵守號誌且兩輛車都在行駛時才偵測
+                if (!obeyTrafficLights && carRed.active && carYellow.active) {
+                    const posRed = carRed.path[carRed.step];
+                    const posYellow = carYellow.path[carYellow.step];
+                    
+                    const dx = posRed.x - posYellow.x;
+                    const dy = posRed.y - posYellow.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < COLLISION_THRESHOLD) {
+                        if (!isColliding) {
+                            // 計算碰撞中點
+                            const midX = (posRed.x + posYellow.x) / 2;
+                            const midY = (posRed.y + posYellow.y) / 2;
+                            showCollisionIcon(midX, midY);
+                        }
+                    } else {
+                        if (isColliding) {
+                            hideCollisionIcon();
+                        }
+                    }
+                } else {
+                     // 如果條件不滿足（例如切換回遵守號誌），確保圖示是隱藏的
+                    if (isColliding) {
+                        hideCollisionIcon();
+                    }
+                }
+                
                 animationFrameId = requestAnimationFrame(gameLoop);
             }
 
@@ -336,7 +379,6 @@
                 }
                 if (!car.active) {
                     car.active = true;
-                    console.log(`啟動 ${car.el.id}`);
                 }
                 button.disabled = true;
             }
