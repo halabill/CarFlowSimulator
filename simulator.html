@@ -74,7 +74,7 @@
         /* --- 物件精確定位 --- */
         #traffic-light-1 { top: 425px; left: 200px; }
         #traffic-light-2 { top: 200px; left: 150px; }
-        #traffic-light-3 { top: 220px; left: 250px; }
+        #traffic-light-3 { top: 250px; left: 250px; }
 
         #control-panel {
             width: 280px; padding: 20px; background-color: #fff;
@@ -127,196 +127,147 @@
             <input type="range" id="speed-yellow" min="1" max="10" value="5">
             <button id="btn-start-yellow">啟動黃色車</button>
         </div>
+        
+        <!-- ======================= 新增的部分 ======================= -->
+        <div class="control-group">
+             <button id="btn-reset" style="background-color: #7f8c8d;">全部重來</button>
+        </div>
+        <!-- ========================================================= -->
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const carRedEl = document.getElementById('car-red');
-            const carYellowEl = document.getElementById('car-yellow');
-            const lights = {
-                '1': { red: document.querySelector('#traffic-light-1 .red'), green: document.querySelector('#traffic-light-1 .green'), state: 'green' },
-                '2': { red: document.querySelector('#traffic-light-2 .red'), green: document.querySelector('#traffic-light-2 .green'), state: 'green' },
-                '3': { red: document.querySelector('#traffic-light-3 .red'), green: document.querySelector('#traffic-light-3 .green'), state: 'green' }
-            };
-            const btnStartRed = document.getElementById('btn-start-red');
-            const btnStartYellow = document.getElementById('btn-start-yellow');
-            const speedSliderRed = document.getElementById('speed-red');
-            const speedSliderYellow = document.getElementById('speed-yellow');
-            const speedValueRed = document.getElementById('speed-red-value');
-            const speedValueYellow = document.getElementById('speed-yellow-value');
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // DOM 元素獲取 (與之前相同)
+        const carRedEl = document.getElementById('car-red');
+        const carYellowEl = document.getElementById('car-yellow');
+        const lights = {
+            '1': { red: document.querySelector('#traffic-light-1 .red'), green: document.querySelector('#traffic-light-1 .green'), state: 'green' },
+            '2': { red: document.querySelector('#traffic-light-2 .red'), green: document.querySelector('#traffic-light-2 .green'), state: 'green' },
+            '3': { red: document.querySelector('#traffic-light-3 .red'), green: document.querySelector('#traffic-light-3 .green'), state: 'green' }
+        };
+        const btnStartRed = document.getElementById('btn-start-red');
+        const btnStartYellow = document.getElementById('btn-start-yellow');
+        const btnReset = document.getElementById('btn-reset'); 
+        const speedSliderRed = document.getElementById('speed-red');
+        const speedSliderYellow = document.getElementById('speed-yellow');
+        const speedValueRed = document.getElementById('speed-red-value');
+        const speedValueYellow = document.getElementById('speed-yellow-value');
 
-            // --- 路徑定義 (高樣本數) ---
-            const redPath = [
-  { x: 320, y: 350 },
-  { x: 280, y: 320 },
-  { x: 270, y: 310 },
-  { x: 260, y: 280 },
-  { x: 240, y: 240 },
-  { x: 210, y: 150 },
-  { x: 200, y: 140 },
-  { x: 190, y: 135 },
-  { x: 180, y: 110 },
-  { x: 160, y: 130 },
-  { x: 130, y: 180 },
-  { x: 120, y: 220 },
-  { x: 130, y: 260 },
-  { x: 150, y: 300 },
-  { x: 180, y: 350 },
-  { x: 200, y: 400 },
-  { x: 200, y: 450 }
-];
+        // 路徑定義和預處理 (與之前相同)
+        const redPath = [
+            { x: 310, y: 341 }, { x: 310, y: 349 }, { x: 302, y: 350 }, { x: 294, y: 348 }, { x: 286, y: 345 }, { x: 278, y: 343 }, { x: 270, y: 340 }, { x: 263, y: 337 }, { x: 255, y: 332 }, { x: 247, y: 324 }, { x: 239, y: 316 }, { x: 234, y: 308 }, { x: 229, y: 300 }, { x: 224, y: 292 }, { x: 222, y: 285 }, { x: 219, y: 277 }, { x: 217, y: 269 }, { x: 215, y: 261 }, { x: 213, y: 253 }, { x: 212, y: 245 }, { x: 212, y: 238 }, { x: 212, y: 230 }, { x: 212, y: 222 }, { x: 212, y: 214 }, { x: 211, y: 206 }, { x: 211, y: 198 }, { x: 211, y: 190 }, { x: 210, y: 183 }, { x: 210, y: 175 }, { x: 210, y: 167 }, { x: 210, y: 159 }, { x: 208, y: 151 }, { x: 206, y: 143 }, { x: 204, y: 136 }, { x: 199, y: 128 }, { x: 193, y: 120 }, { x: 186, y: 112 }, { x: 178, y: 107 }, { x: 170, y: 105 }, { x: 162, y: 104 }, { x: 155, y: 104 }, { x: 147, y: 104 }, { x: 139, y: 103 }, { x: 131, y: 104 }, { x: 123, y: 104 }, { x: 115, y: 106 }, { x: 107, y: 108 }, { x: 100, y: 111 }, { x: 92, y: 115 }, { x: 84, y: 121 }, { x: 77, y: 129 }, { x: 71, y: 137 }, { x: 67, y: 145 }, { x: 63, y: 152 }, { x: 62, y: 160 }, { x: 62, y: 168 }, { x: 64, y: 176 }, { x: 65, y: 184 }, { x: 67, y: 192 }, { x: 70, y: 200 }, { x: 73, y: 207 }, { x: 77, y: 215 }, { x: 82, y: 223 }, { x: 90, y: 229 }, { x: 98, y: 233 }, { x: 106, y: 236 }, { x: 113, y: 238 }, { x: 121, y: 239 }, { x: 129, y: 242 }, { x: 137, y: 247 }, { x: 145, y: 253 }, { x: 151, y: 261 }, { x: 156, y: 269 }, { x: 159, y: 276 }, { x: 163, y: 284 }, { x: 168, y: 292 }, { x: 170, y: 300 }, { x: 173, y: 308 }, { x: 175, y: 316 }, { x: 178, y: 324 }, { x: 179, y: 331 }, { x: 180, y: 339 }, { x: 180, y: 347 }, { x: 180, y: 355 }, { x: 180, y: 363 }, { x: 180, y: 371 }, { x: 180, y: 378 }, { x: 180, y: 386 }, { x: 180, y: 394 }, { x: 181, y: 402 }, { x: 182, y: 410 }, { x: 183, y: 418 }, { x: 183, y: 426 }, { x: 183, y: 433 }, { x: 183, y: 441 }, { x: 183, y: 449 }, { x: 183, y: 457 }, { x: 183, y: 465 }, { x: 183, y: 473 }, { x: 176, y: 476 },
+        ];
+        const yellowPath = [
+            { x: 175, y: 475 }, { x: 173, y: 468 }, { x: 173, y: 460 }, { x: 173, y: 452 }, { x: 173, y: 444 }, { x: 173, y: 436 }, { x: 173, y: 428 }, { x: 173, y: 420 }, { x: 172, y: 413 }, { x: 171, y: 405 }, { x: 170, y: 397 }, { x: 170, y: 389 }, { x: 170, y: 381 }, { x: 170, y: 373 }, { x: 170, y: 365 }, { x: 170, y: 358 }, { x: 170, y: 350 }, { x: 169, y: 342 }, { x: 169, y: 334 }, { x: 167, y: 326 }, { x: 165, y: 318 }, { x: 163, y: 310 }, { x: 160, y: 303 }, { x: 156, y: 295 }, { x: 153, y: 287 }, { x: 149, y: 279 }, { x: 144, y: 271 }, { x: 138, y: 263 }, { x: 131, y: 256 }, { x: 124, y: 252 }, { x: 116, y: 249 }, { x: 108, y: 248 }, { x: 100, y: 245 }, { x: 92, y: 242 }, { x: 84, y: 238 }, { x: 76, y: 232 }, { x: 71, y: 225 }, { x: 65, y: 217 }, { x: 62, y: 209 }, { x: 59, y: 201 }, { x: 57, y: 193 }, { x: 55, y: 185 }, { x: 52, y: 177 }, { x: 52, y: 170 }, { x: 52, y: 162 }, { x: 52, y: 154 }, { x: 54, y: 146 }, { x: 57, y: 138 }, { x: 62, y: 130 }, { x: 68, y: 122 }, { x: 74, y: 115 }, { x: 82, y: 107 }, { x: 90, y: 103 }, { x: 98, y: 100 }, { x: 106, y: 97 }, { x: 114, y: 95 }, { x: 122, y: 94 }, { x: 129, y: 93 }, { x: 137, y: 93 }, { x: 145, y: 93 }, { x: 153, y: 94 }, { x: 161, y: 94 }, { x: 169, y: 94 }, { x: 177, y: 96 }, { x: 184, y: 98 }, { x: 192, y: 103 }, { x: 200, y: 111 }, { x: 207, y: 119 }, { x: 212, y: 127 }, { x: 215, y: 135 }, { x: 217, y: 143 }, { x: 219, y: 150 }, { x: 220, y: 158 }, { x: 220, y: 166 }, { x: 220, y: 174 }, { x: 220, y: 182 }, { x: 221, y: 190 }, { x: 221, y: 198 }, { x: 222, y: 205 }, { x: 222, y: 213 }, { x: 222, y: 221 }, { x: 222, y: 229 }, { x: 222, y: 237 }, { x: 223, y: 245 }, { x: 224, y: 253 }, { x: 225, y: 260 }, { x: 227, y: 268 }, { x: 229, y: 276 }, { x: 233, y: 284 }, { x: 237, y: 292 }, { x: 242, y: 300 }, { x: 247, y: 308 }, { x: 253, y: 315 }, { x: 261, y: 323 }, { x: 269, y: 328 }, { x: 277, y: 331 }, { x: 285, y: 333 }, { x: 293, y: 335 }, { x: 301, y: 338 }, { x: 309, y: 340 },
+        ];
+        function preprocessPath(path) { for (let i = 0; i < path.length; i++) { if (i === path.length - 1) { path[i].angle = path[i - 1].angle; continue; } const currentPoint = path[i]; const nextPoint = path[i + 1]; const dx = nextPoint.x - currentPoint.x; const dy = nextPoint.y - currentPoint.y; let angleDeg = Math.atan2(dy, dx) * 180 / Math.PI; angleDeg += 90; path[i].angle = angleDeg; } }
+        preprocessPath(redPath);
+        preprocessPath(yellowPath);
 
-            const yellowPath = [
-  { x: 300, y: 350 },
-  { x: 300, y: 300 },
-  { x: 290, y: 250 },
-  { x: 270, y: 200 },
-  { x: 240, y: 160 },
-  { x: 200, y: 130 },
-  { x: 160, y: 140 },
-  { x: 130, y: 180 },
-  { x: 120, y: 220 },
-  { x: 130, y: 260 },
-  { x: 150, y: 300 },
-  { x: 180, y: 350 },
-  { x: 200, y: 400 },
-  { x: 200, y: 450 }
-];
-            
-            let carRed = {
-                el: carRedEl, path: redPath, speed: 5, step: 0, active: false, paused: false,
-                stopAt: [],
-                endTrigger: { step: redPath.length - 3 }
-            };
-            let carYellow = {
-                el: carYellowEl, path: yellowPath, speed: 5, step: 0, active: false, paused: false,
-                // 校準後的停車點索引
-                stopAt: [{ step: 3, light: '1' }, { step: 8, light: '2' }],
-                endTrigger: { step: yellowPath.length - 5 }
-            };
-
-            const resetCarState = (car) => {
-                car.active = false;
-                car.paused = false;
-                car.step = 0;
-                const { x, y, angle } = car.path[0];
-                car.el.style.left = `${x - (car.el.offsetWidth / 2)}px`;
-                car.el.style.top = `${y - (car.el.offsetHeight / 2)}px`;
-                car.el.style.transform = `rotate(${angle}deg)`;
-            };
-
-            function setLightState(lightId, state) {
-                const light = lights[lightId];
-                light.state = state;
-                light.green.classList.toggle('active', state === 'green');
-                light.red.classList.toggle('active', state === 'red');
-            }
-
-            function setButtonsState(enabled) {
-                btnStartRed.disabled = !enabled;
-                btnStartYellow.disabled = !enabled;
-            }
-
-            function resetSimulation() {
-                setButtonsState(true);
-                resetCarState(carRed);
-                resetCarState(carYellow);
-                setLightState('1', 'green');
-                setLightState('2', 'green');
-                setLightState('3', 'green');
-            }
-
-            function moveCar(car) {
-                if (!car.active || car.paused) return;
-
-                // 檢查是否需要停車
-                for (const stop of car.stopAt) {
-                    if (car.step === stop.step && lights[stop.light].state === 'red') {
-                        car.paused = true;
-                        return; 
-                    }
-                }
-
-                // 檢查是否到達終點
-                if (car.step >= car.path.length - 1) {
-                    resetSimulation();
-                    return;
-                }
-
-                car.step++;
-                const { x, y, angle } = car.path[car.step];
-                car.el.style.left = `${x - (car.el.offsetWidth / 2)}px`;
-                car.el.style.top = `${y - (car.el.offsetHeight / 2)}px`;
-                car.el.style.transform = `rotate(${angle}deg)`;
-
-                // 檢查是否通過終點觸發器
-                if (car.step >= car.endTrigger.step) {
-                    setLightState('1', 'green');
-                    setLightState('2', 'green');
-                    setLightState('3', 'green');
+        let carRed = {
+            el: carRedEl, path: redPath, speed: 5, step: 0, active: false, paused: false,
+            stopAt: [],
+            controlTriggers: [
+                { step: 20, action: () => { setLightState('1', 'red'); setLightState('2', 'red'); }, done: false },
+                { step: 98, action: () => { setLightState('1', 'green'); setLightState('2', 'green'); }, done: false }
+            ]
+        };
+        let carYellow = {
+            el: carYellowEl, path: yellowPath, speed: 5, step: 0, active: false, paused: false,
+            stopAt: [],
+            controlTriggers: [
+                { step: 5, action: () => { setLightState('3', 'red'); }, done: false },
+                { step: 82, action: () => { setLightState('3', 'green'); }, done: false }
+            ]
+        };
+        const resetCarState = (car) => {
+            car.active = false;
+            car.paused = false;
+            car.step = 0;
+            if (car.controlTriggers) {
+                for (const trigger of car.controlTriggers) {
+                    trigger.done = false;
                 }
             }
-            
-            let animationFrameId;
-            let carRedProgress = 0;
-            let carYellowProgress = 0;
+            const { x, y, angle } = car.path[0];
+            car.el.style.left = `${x - (car.el.offsetWidth / 2)}px`;
+            car.el.style.top = `${y - (car.el.offsetHeight / 2)}px`;
+            car.el.style.transform = `rotate(${angle}deg)`;
+        };
+        function setLightState(lightId, state) {
+            const light = lights[lightId];
+            if (!light) return;
+            light.state = state;
+            light.green.classList.toggle('active', state === 'green');
+            light.red.classList.toggle('active', state === 'red');
+        }
 
-            function gameLoop(timestamp) {
-                if(carRed.active) {
-                    carRedProgress += carRed.speed;
-                    // 數字越大，速度越慢。調整 50 這個值來改變整體速度感。
-                    if(carRedProgress >= 50) {
-                        moveCar(carRed);
-                        carRedProgress = 0;
-                    }
-                }
+        function resetSimulation() {
+            console.log("全部重來！");
+            resetCarState(carRed);
+            resetCarState(carYellow);
+            setLightState('1', 'green');
+            setLightState('2', 'green');
+            setLightState('3', 'green');
+            btnStartRed.disabled = false;
+            btnStartYellow.disabled = false;
+        }
 
-                if(carYellow.active) {
-                    carYellowProgress += carYellow.speed;
-                    if(carYellowProgress >= 50) {
-                        moveCar(carYellow);
-                        carYellowProgress = 0;
-                    }
-                }
-                
-                animationFrameId = requestAnimationFrame(gameLoop);
+        function moveCar(car) {
+            if (!car.active) return;
+            if (car.step >= car.path.length - 1) {
+                car.active = false; 
+                // 只禁用該車輛的按鈕，而不是所有按鈕
+                if(car === carRed) btnStartRed.disabled = true;
+                if(car === carYellow) btnStartYellow.disabled = true;
+                return;
             }
-            
-            function stopGameLoop() {
-                 cancelAnimationFrame(animationFrameId);
+            if (car.paused) { for (const stop of car.stopAt) { if (car.step === stop.step && lights[stop.light].state === 'green') { car.paused = false; break; } } if(car.paused) return; }
+            for (const stop of car.stopAt) { if (car.step === stop.step && lights[stop.light].state === 'red') { car.paused = true; return; } }
+            car.step++;
+            const { x, y, angle } = car.path[car.step];
+            car.el.style.left = `${x - (car.el.offsetWidth / 2)}px`;
+            car.el.style.top = `${y - (car.el.offsetHeight / 2)}px`;
+            car.el.style.transform = `rotate(${angle}deg)`;
+            if (car.controlTriggers) { for (const trigger of car.controlTriggers) { if (!trigger.done && car.step >= trigger.step) { trigger.action(); trigger.done = true; } } }
+        }
+
+        let animationFrameId;
+        let carRedProgress = 0;
+        let carYellowProgress = 0;
+        function gameLoop() {
+            if(carRed.active) { carRedProgress += carRed.speed; if(carRedProgress >= 50) { moveCar(carRed); carRedProgress = 0; } }
+            if(carYellow.active) { carYellowProgress += carYellow.speed; if(carYellowProgress >= 50) { moveCar(carYellow); carYellowProgress = 0; } }
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        // 修改後的 startCar 函式，以支援同時啟動
+        function startCar(car, button) {
+            // 如果車輛已在終點，先重置它
+            if (car.step >= car.path.length - 1) {
+                resetCarState(car);
             }
-
-            function startSimulation(carToStart) {
-                resetSimulation();
-                setButtonsState(false);
-                carToStart.active = true;
-                
-                if (carToStart === carRed) {
-                    setLightState('3', 'green');
-                    setLightState('1', 'red');
-                    setLightState('2', 'red');
-                } else {
-                    setLightState('1', 'green');
-                    setLightState('2', 'red');
-                    setLightState('3', 'red');
-                }
+            // 如果車輛不在跑，就啟動它
+            if (!car.active) {
+                car.active = true;
+                console.log(`啟動 ${car.el.id}`);
             }
+            // 禁用剛按下的按鈕，防止重複點擊
+            button.disabled = true;
+        }
 
-            btnStartRed.addEventListener('click', () => startSimulation(carRed));
-            btnStartYellow.addEventListener('click', () => startSimulation(carYellow));
-            
-            speedSliderRed.addEventListener('input', (e) => {
-                carRed.speed = parseInt(e.target.value, 10);
-                speedValueRed.textContent = carRed.speed;
-            });
-            speedSliderYellow.addEventListener('input', (e) => {
-                carYellow.speed = parseInt(e.target.value, 10);
-                speedValueYellow.textContent = carYellow.speed;
-            });
+        // 事件綁定
+        btnStartRed.addEventListener('click', () => startCar(carRed, btnStartRed));
+        btnStartYellow.addEventListener('click', () => startCar(carYellow, btnStartYellow));
+        btnReset.addEventListener('click', resetSimulation);
+        
+        speedSliderRed.addEventListener('input', (e) => { carRed.speed = parseInt(e.target.value, 10); speedValueRed.textContent = carRed.speed; });
+        speedSliderYellow.addEventListener('input', (e) => { carYellow.speed = parseInt(e.target.value, 10); speedValueYellow.textContent = carYellow.speed; });
 
-            resetSimulation();
-            gameLoop();
-        });
-    </script>
+        // 初始化
+        resetSimulation();
+        gameLoop();
+    });
+</script>
 </body>
 </html>
