@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智慧車道模擬器 (碰撞偵測版)</title>
+    <title>智慧車道模擬器 (計時版)</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -96,12 +96,17 @@
         #btn-start-yellow:hover:not(:disabled) { background-color: #f39c12; }
         
         .toggle-group {
-            display: flex;
+            flex-direction: row;
             justify-content: space-between;
             align-items: center;
             padding: 10px;
             background-color: #ecf0f1;
             border-radius: 5px;
+        }
+        .toggle-container, .timer-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         .toggle-group span {
             font-weight: bold;
@@ -147,26 +152,22 @@
             transform: translateX(24px);
         }
 
+        #timer-display {
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 1.1em;
+        }
+
         .collision-icon {
             position: absolute;
-            width: 40px;
-            height: 40px;
-            background-color: #e74c3c;
-            color: white;
-            border-radius: 50%;
-            border: 3px solid white;
-            box-shadow: 0 0 15px rgba(231, 76, 60, 0.8);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            font-size: 28px;
-            font-weight: bold;
-            font-family: 'Arial', sans-serif;
-            z-index: 20;
-            opacity: 0;
-            transition: opacity 0.3s ease-in-out;
-            user-select: none;
-            pointer-events: none;
+            width: 40px; height: 40px; background-color: #e74c3c;
+            color: white; border-radius: 50%; border: 3px solid white;
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.8); display: none;
+            justify-content: center; align-items: center;
+            font-size: 28px; font-weight: bold; font-family: 'Arial', sans-serif;
+            z-index: 20; opacity: 0; transition: opacity 0.3s ease-in-out;
+            user-select: none; pointer-events: none;
         }
     </style>
 </head>
@@ -187,13 +188,19 @@
     </div>
 
     <div id="control-panel">
-        <h3>智慧車道控制器 (碰撞偵測版)</h3>
+        <h3>智慧車道控制器 (計時版)</h3>
         <div class="control-group toggle-group">
-            <span>遵守號誌</span>
-            <label class="toggle-switch">
-                <input type="checkbox" id="obey-toggle" checked>
-                <span class="slider"></span>
-            </label>
+            <div class="toggle-container">
+                <span>遵守號誌</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="obey-toggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="timer-container">
+                <span>時間:</span>
+                <span id="timer-display">0.00s</span>
+            </div>
         </div>
         <div class="control-group">
             <label for="speed-red">紅色車速度: <span id="speed-red-value">5</span></label>
@@ -214,7 +221,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             const carRedEl = document.getElementById('car-red');
             const carYellowEl = document.getElementById('car-yellow');
-            const collisionIconEl = document.getElementById('collision-icon'); // 獲取圖示元素
+            const collisionIconEl = document.getElementById('collision-icon');
+            const timerDisplayEl = document.getElementById('timer-display'); // 獲取計時器元素
             const lights = {
                 '1': { red: document.querySelector('#traffic-light-1 .red'), green: document.querySelector('#traffic-light-1 .green'), state: 'green' },
                 '2': { red: document.querySelector('#traffic-light-2 .red'), green: document.querySelector('#traffic-light-2 .green'), state: 'green' },
@@ -230,14 +238,17 @@
             
             const obeyToggle = document.getElementById('obey-toggle');
             let obeyTrafficLights = obeyToggle.checked;
-
-            // --- 新增的碰撞偵測相關變數 ---
             let isColliding = false;
-            const COLLISION_THRESHOLD = 40; // 碰撞距離閾值 (像素)
+            const COLLISION_THRESHOLD = 40;
+
+            // --- 新增的計時器狀態變數 ---
+            let timerActive = false;
+            let startTime = 0;
+            let elapsedTime = 0;
+
 
             obeyToggle.addEventListener('change', (e) => {
                 obeyTrafficLights = e.target.checked;
-                // 如果從不遵守變回遵守，要隱藏可能存在的碰撞圖示
                 if (obeyTrafficLights && isColliding) {
                     hideCollisionIcon();
                 }
@@ -272,18 +283,15 @@
                 light.red.classList.toggle('active', state === 'red');
             }
 
-            // --- 新增的圖示控制函式 ---
             function showCollisionIcon(x, y) {
                 collisionIconEl.style.left = `${x - collisionIconEl.offsetWidth / 2}px`;
                 collisionIconEl.style.top = `${y - collisionIconEl.offsetHeight / 2}px`;
                 collisionIconEl.style.display = 'flex';
-                // 使用一個微小的延遲來確保 display 先生效，然後再改變 opacity 以觸發 transition
                 setTimeout(() => { collisionIconEl.style.opacity = '1'; }, 10);
                 isColliding = true;
             }
             function hideCollisionIcon() {
                 collisionIconEl.style.opacity = '0';
-                // 在淡出動畫結束後再隱藏元素
                 setTimeout(() => { collisionIconEl.style.display = 'none'; }, 300);
                 isColliding = false;
             }
@@ -294,9 +302,15 @@
                 setLightState('1', 'green');
                 setLightState('2', 'green');
                 setLightState('3', 'green');
-                hideCollisionIcon(); // 重置時也要隱藏圖示
+                hideCollisionIcon();
                 btnStartRed.disabled = false;
                 btnStartYellow.disabled = false;
+                
+                // 重置計時器
+                timerActive = false;
+                elapsedTime = 0;
+                startTime = 0;
+                timerDisplayEl.textContent = '0.00s';
             }
 
             function moveCar(car) {
@@ -315,6 +329,12 @@
                     car.active = false; 
                     if (car === carRed) btnStartRed.disabled = true;
                     if (car === carYellow) btnStartYellow.disabled = true;
+
+                    // 當有車輛停止時，檢查是否所有車都停止了
+                    if (!carRed.active && !carYellow.active) {
+                        timerActive = false; // 暫停計時器
+                        elapsedTime = performance.now() - startTime;
+                    }
                     return;
                 }
                 car.step++;
@@ -337,23 +357,23 @@
             let carYellowProgress = 0;
 
             function gameLoop() {
-                // 車輛移動
                 if(carRed.active) { carRedProgress += carRed.speed; if(carRedProgress >= 50) { moveCar(carRed); carRedProgress = 0; } }
                 if(carYellow.active) { carYellowProgress += carYellow.speed; if(carYellowProgress >= 50) { moveCar(carYellow); carYellowProgress = 0; } }
 
-                // --- 碰撞偵測邏輯 ---
-                // 只有在不遵守號誌且兩輛車都在行駛時才偵測
+                // --- 計時器更新邏輯 ---
+                if (timerActive) {
+                    const currentElapsedTime = (performance.now() - startTime) / 1000;
+                    timerDisplayEl.textContent = currentElapsedTime.toFixed(2) + 's';
+                }
+
                 if (!obeyTrafficLights && carRed.active && carYellow.active) {
                     const posRed = carRed.path[carRed.step];
                     const posYellow = carYellow.path[carYellow.step];
-                    
                     const dx = posRed.x - posYellow.x;
                     const dy = posRed.y - posYellow.y;
                     const distance = Math.sqrt(dx * dx + dy * dy);
-
                     if (distance < COLLISION_THRESHOLD) {
                         if (!isColliding) {
-                            // 計算碰撞中點
                             const midX = (posRed.x + posYellow.x) / 2;
                             const midY = (posRed.y + posYellow.y) / 2;
                             showCollisionIcon(midX, midY);
@@ -364,7 +384,6 @@
                         }
                     }
                 } else {
-                     // 如果條件不滿足（例如切換回遵守號誌），確保圖示是隱藏的
                     if (isColliding) {
                         hideCollisionIcon();
                     }
@@ -374,6 +393,12 @@
             }
 
             function startCar(car, button) {
+                // 如果計時器還沒啟動，就啟動它
+                if (!timerActive && (!carRed.active && !carYellow.active)) {
+                    startTime = performance.now();
+                    timerActive = true;
+                }
+
                 if (car.step >= car.path.length - 1) {
                     resetCarState(car);
                 }
@@ -389,7 +414,7 @@
             speedSliderRed.addEventListener('input', (e) => { carRed.speed = parseInt(e.target.value, 10); speedValueRed.textContent = carRed.speed; });
             speedSliderYellow.addEventListener('input', (e) => { carYellow.speed = parseInt(e.target.value, 10); speedValueYellow.textContent = carYellow.speed; });
 
-            resetSimulation();
+            resetSimulation(); // 初始調用
             gameLoop();
         });
     </script>
