@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智慧車道模擬器 (最終版)</title>
+    <title>智慧車道模擬器 (響應式修正版)</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             justify-content: center;
-            align-items: flex-start;
+            align-items: center;
+            flex-direction: column;
             background-color: #f0f0f0;
             padding: 20px;
             gap: 30px;
@@ -17,8 +18,9 @@
 
         #simulator-container {
             position: relative;
-            width: 872px; 
-            height: 503px;
+            width: 90%; 
+            max-width: 872px; 
+            aspect-ratio: 872 / 503;
             background-image: url('background.png');
             background-size: 100% 100%;
             background-repeat: no-repeat;
@@ -29,7 +31,7 @@
 
         .car {
             position: absolute;
-            width: 20px;
+            width: 20px; 
             height: 38px;
             border: 1px solid black;
             border-radius: 6px;
@@ -67,13 +69,11 @@
         }
         .light.red.active { background-color: #e74c3c; box-shadow: 0 0 8px #e74c3c; }
         .light.green.active { background-color: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
-
-        #traffic-light-1 { top: 425px; left: 200px; }
-        #traffic-light-2 { top: 200px; left: 150px; }
-        #traffic-light-3 { top: 220px; left: 250px; }
-
+        
         #control-panel {
-            width: 280px; padding: 20px; background-color: #fff;
+            width: 90%; 
+            max-width: 872px; 
+            padding: 20px; background-color: #fff;
             border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             display: flex; flex-direction: column; gap: 20px;
         }
@@ -118,56 +118,45 @@
             width: 50px;
             height: 26px;
         }
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
         .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #e74c3c;
-            border-radius: 26px;
-            transition: .4s;
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #e74c3c; border-radius: 26px; transition: .4s;
         }
         .slider:before {
-            position: absolute;
-            content: "";
-            height: 20px;
-            width: 20px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            border-radius: 50%;
+            position: absolute; content: ""; height: 20px; width: 20px;
+            left: 3px; bottom: 3px; background-color: white; border-radius: 50%;
             transition: .4s;
         }
-        input:checked + .slider {
-            background-color: #2ecc71;
-        }
-        input:checked + .slider:before {
-            transform: translateX(24px);
-        }
+        input:checked + .slider { background-color: #2ecc71; }
+        input:checked + .slider:before { transform: translateX(24px); }
 
         #timer-display {
-            font-family: 'Courier New', Courier, monospace;
-            font-weight: bold;
-            color: #2c3e50;
-            font-size: 1.1em;
+            font-family: 'Courier New', Courier, monospace; font-weight: bold;
+            color: #2c3e50; font-size: 1.1em;
         }
 
         .collision-icon {
-            position: absolute;
-            width: 40px; height: 40px; background-color: #e74c3c;
+            position: absolute; width: 40px; height: 40px; background-color: #e74c3c;
             color: white; border-radius: 50%; border: 3px solid white;
             box-shadow: 0 0 15px rgba(231, 76, 60, 0.8); display: none;
-            justify-content: center; align-items: center;
-            font-size: 28px; font-weight: bold; font-family: 'Arial', sans-serif;
-            z-index: 20; opacity: 0; transition: opacity 0.3s ease-in-out;
+            justify-content: center; align-items: center; font-size: 28px;
+            font-weight: bold; font-family: 'Arial', sans-serif; z-index: 20;
+            opacity: 0; transition: opacity 0.3s ease-in-out;
             user-select: none; pointer-events: none;
+        }
+        
+        @media (min-width: 992px) {
+            body {
+                flex-direction: row;
+                align-items: flex-start;
+            }
+            #simulator-container {
+                width: 872px;
+            }
+            #control-panel {
+                width: 280px;
+            }
         }
     </style>
 </head>
@@ -188,7 +177,7 @@
     </div>
 
     <div id="control-panel">
-        <h3>智慧車道控制器 (最終版)</h3>
+        <h3>智慧車道模擬器 (最終版)</h3>
         <div class="control-group toggle-group">
             <div class="toggle-container">
                 <span>遵守號誌</span>
@@ -203,17 +192,13 @@
             </div>
         </div>
         <div class="control-group">
-            <!-- ======================= 修改點 1 & 2 ======================= -->
             <label for="speed-red">紅色車速度: <span id="speed-red-value">3</span></label>
             <input type="range" id="speed-red" min="1" max="10" value="3">
-            <!-- ========================================================= -->
             <button id="btn-start-red">啟動紅色車</button>
         </div>
         <div class="control-group">
-            <!-- ======================= 修改點 3 & 4 ======================= -->
             <label for="speed-yellow">黃色車速度: <span id="speed-yellow-value">3</span></label>
             <input type="range" id="speed-yellow" min="1" max="10" value="3">
-            <!-- ========================================================= -->
             <button id="btn-start-yellow">啟動黃色車</button>
         </div>
         <div class="control-group">
@@ -223,14 +208,16 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // DOM 元素獲取
+            const simulatorContainerEl = document.getElementById('simulator-container');
             const carRedEl = document.getElementById('car-red');
             const carYellowEl = document.getElementById('car-yellow');
             const collisionIconEl = document.getElementById('collision-icon');
             const timerDisplayEl = document.getElementById('timer-display');
             const lights = {
-                '1': { red: document.querySelector('#traffic-light-1 .red'), green: document.querySelector('#traffic-light-1 .green'), state: 'green' },
-                '2': { red: document.querySelector('#traffic-light-2 .red'), green: document.querySelector('#traffic-light-2 .green'), state: 'green' },
-                '3': { red: document.querySelector('#traffic-light-3 .red'), green: document.querySelector('#traffic-light-3 .green'), state: 'green' }
+                '1': { el: document.getElementById('traffic-light-1'), red: document.querySelector('#traffic-light-1 .red'), green: document.querySelector('#traffic-light-1 .green'), state: 'green' },
+                '2': { el: document.getElementById('traffic-light-2'), red: document.querySelector('#traffic-light-2 .red'), green: document.querySelector('#traffic-light-2 .green'), state: 'green' },
+                '3': { el: document.getElementById('traffic-light-3'), red: document.querySelector('#traffic-light-3 .red'), green: document.querySelector('#traffic-light-3 .green'), state: 'green' }
             };
             const btnStartRed = document.getElementById('btn-start-red');
             const btnStartYellow = document.getElementById('btn-start-yellow');
@@ -242,12 +229,22 @@
             
             const obeyToggle = document.getElementById('obey-toggle');
             let obeyTrafficLights = obeyToggle.checked;
+            
+            // 響應式相關變數
+            const ORIGINAL_WIDTH = 872;
+            let scaleFactor = 1;
+
+            const originalPositions = {
+                'traffic-light-1': { top: 425, left: 200 },
+                'traffic-light-2': { top: 200, left: 150 },
+                'traffic-light-3': { top: 220, left: 250 }
+            };
+            
+            // 遊戲狀態變數
             let isColliding = false;
             const COLLISION_THRESHOLD = 40;
-
             let timerActive = false;
             let startTime = 0;
-            let elapsedTime = 0;
 
             obeyToggle.addEventListener('change', (e) => {
                 obeyTrafficLights = e.target.checked;
@@ -262,34 +259,45 @@
             preprocessPath(redPath);
             preprocessPath(yellowPath);
             
-            // ======================= 修改點 5 =======================
             let carRed = { el: carRedEl, path: redPath, speed: 3, step: 0, active: false, stopAt: [ { step: 12, light: '3' } ], controlTriggers: [ { step: 20, action: () => { setLightState('1', 'red'); setLightState('2', 'red'); }, done: false }, { step: 98, action: () => { setLightState('1', 'green'); setLightState('2', 'green'); }, done: false } ] };
             let carYellow = { el: carYellowEl, path: yellowPath, speed: 3, step: 0, active: false, stopAt: [ { step: 7, light: '1' }, { step: 43, light: '2' } ], controlTriggers: [ { step: 5, action: () => { setLightState('3', 'red'); }, done: false }, { step: 82, action: () => { setLightState('3', 'green'); }, done: false } ] };
-            // =========================================================
-
-            const resetCarState = (car) => {
-                car.active = false;
-                car.step = 0;
-                if (car.controlTriggers) {
-                    car.controlTriggers.forEach(trigger => trigger.done = false);
+            
+            // --- 響應式佈局更新函式 ---
+            function updateLayout() {
+                scaleFactor = simulatorContainerEl.offsetWidth / ORIGINAL_WIDTH;
+                
+                // 更新紅綠燈位置
+                for (const id in lights) {
+                    const lightData = lights[id];
+                    const pos = originalPositions[`traffic-light-${id}`];
+                    if (lightData.el && pos) {
+                        lightData.el.style.top = (pos.top * scaleFactor) + 'px';
+                        lightData.el.style.left = (pos.left * scaleFactor) + 'px';
+                    }
                 }
-                const { x, y, angle } = car.path[0];
-                car.el.style.left = `${x - (car.el.offsetWidth / 2)}px`;
-                car.el.style.top = `${y - (car.el.offsetHeight / 2)}px`;
-                car.el.style.transform = `rotate(${angle}deg)`;
-            };
-
-            function setLightState(lightId, state) {
-                const light = lights[lightId];
-                if (!light) return;
-                light.state = state;
-                light.green.classList.toggle('active', state === 'green');
-                light.red.classList.toggle('active', state === 'red');
+                
+                // 更新車輛位置
+                [carRed, carYellow].forEach(car => {
+                    const pos = car.path[car.step];
+                    if (pos) {
+                        car.el.style.left = `${pos.x * scaleFactor - car.el.offsetWidth / 2}px`;
+                        car.el.style.top = `${pos.y * scaleFactor - car.el.offsetHeight / 2}px`;
+                    }
+                });
             }
-
+            window.addEventListener('resize', updateLayout);
+            
+            // --- 狀態控制函式 ---
+            function setLightState(lightId, state) {
+                const lightGroup = lights[lightId];
+                if (!lightGroup) return;
+                lightGroup.state = state;
+                lightGroup.red.classList.toggle('active', state === 'red');
+                lightGroup.green.classList.toggle('active', state === 'green');
+            }
             function showCollisionIcon(x, y) {
-                collisionIconEl.style.left = `${x - collisionIconEl.offsetWidth / 2}px`;
-                collisionIconEl.style.top = `${y - collisionIconEl.offsetHeight / 2}px`;
+                collisionIconEl.style.left = `${x * scaleFactor - collisionIconEl.offsetWidth / 2}px`;
+                collisionIconEl.style.top = `${y * scaleFactor - collisionIconEl.offsetHeight / 2}px`;
                 collisionIconEl.style.display = 'flex';
                 setTimeout(() => { collisionIconEl.style.opacity = '1'; }, 10);
                 isColliding = true;
@@ -299,23 +307,49 @@
                 setTimeout(() => { collisionIconEl.style.display = 'none'; }, 300);
                 isColliding = false;
             }
+            
+            // --- 重置與啟動 ---
+            function resetCarState(car) {
+                car.active = false;
+                car.step = 0;
+                if (car.controlTriggers) {
+                    car.controlTriggers.forEach(trigger => trigger.done = false);
+                }
+                const pos = car.path[0];
+                const { x, y, angle } = pos;
+                // *** 關鍵修正：重置時必須使用縮放因子 ***
+                car.el.style.left = `${x * scaleFactor - car.el.offsetWidth / 2}px`;
+                car.el.style.top = `${y * scaleFactor - car.el.offsetHeight / 2}px`;
+                car.el.style.transform = `rotate(${angle}deg)`;
+            }
 
             function resetSimulation() {
                 resetCarState(carRed);
                 resetCarState(carYellow);
-                setLightState('1', 'green');
-                setLightState('2', 'green');
-                setLightState('3', 'green');
+                ['1', '2', '3'].forEach(id => setLightState(id, 'green'));
                 hideCollisionIcon();
                 btnStartRed.disabled = false;
                 btnStartYellow.disabled = false;
-                
                 timerActive = false;
-                elapsedTime = 0;
-                startTime = 0;
                 timerDisplayEl.textContent = '0.00s';
+                updateLayout(); // 確保所有元素在重置後位置正確
             }
 
+            function startCar(car, button) {
+                if (!timerActive && (!carRed.active && !carYellow.active)) {
+                    startTime = performance.now();
+                    timerActive = true;
+                }
+                if (car.step >= car.path.length - 1) {
+                    resetCarState(car);
+                }
+                if (!car.active) {
+                    car.active = true;
+                }
+                button.disabled = true;
+            }
+
+            // --- 遊戲核心邏輯 ---
             function moveCar(car) {
                 if (!car.active) return;
                 if (obeyTrafficLights) {
@@ -334,14 +368,14 @@
                     if (car === carYellow) btnStartYellow.disabled = true;
                     if (!carRed.active && !carYellow.active) {
                         timerActive = false;
-                        elapsedTime = performance.now() - startTime;
                     }
                     return;
                 }
                 car.step++;
                 const { x, y, angle } = car.path[car.step];
-                car.el.style.left = `${x - (car.el.offsetWidth / 2)}px`;
-                car.el.style.top = `${y - (car.el.offsetHeight / 2)}px`;
+                // *** 關鍵修正：移動時也必須使用縮放因子 ***
+                car.el.style.left = `${x * scaleFactor - car.el.offsetWidth / 2}px`;
+                car.el.style.top = `${y * scaleFactor - car.el.offsetHeight / 2}px`;
                 car.el.style.transform = `rotate(${angle}deg)`;
                 if (car.controlTriggers) {
                     for (const trigger of car.controlTriggers) {
@@ -352,15 +386,12 @@
                     }
                 }
             }
-
-            let animationFrameId;
-            let carRedProgress = 0;
-            let carYellowProgress = 0;
-
+            
+            let carRedProgress = 0, carYellowProgress = 0;
             function gameLoop() {
                 if(carRed.active) { carRedProgress += carRed.speed; if(carRedProgress >= 50) { moveCar(carRed); carRedProgress = 0; } }
                 if(carYellow.active) { carYellowProgress += carYellow.speed; if(carYellowProgress >= 50) { moveCar(carYellow); carYellowProgress = 0; } }
-
+                
                 if (timerActive) {
                     const currentElapsedTime = (performance.now() - startTime) / 1000;
                     timerDisplayEl.textContent = currentElapsedTime.toFixed(2) + 's';
@@ -371,48 +402,33 @@
                     const posYellow = carYellow.path[carYellow.step];
                     const dx = posRed.x - posYellow.x;
                     const dy = posRed.y - posYellow.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    // *** 關鍵修正：碰撞距離也要縮放 ***
+                    const distance = Math.sqrt(dx * dx + dy * dy) * scaleFactor;
                     if (distance < COLLISION_THRESHOLD) {
                         if (!isColliding) {
                             const midX = (posRed.x + posYellow.x) / 2;
                             const midY = (posRed.y + posYellow.y) / 2;
-                            showCollisionIcon(midX, midY);
+                            showCollisionIcon(midX, midY); // showCollisionIcon 內部已處理縮放
                         }
                     } else {
-                        if (isColliding) {
-                            hideCollisionIcon();
-                        }
+                        if (isColliding) { hideCollisionIcon(); }
                     }
                 } else {
-                    if (isColliding) {
-                        hideCollisionIcon();
-                    }
+                    if (isColliding) { hideCollisionIcon(); }
                 }
                 
-                animationFrameId = requestAnimationFrame(gameLoop);
+                requestAnimationFrame(gameLoop);
             }
 
-            function startCar(car, button) {
-                if (!timerActive && (!carRed.active && !carYellow.active)) {
-                    startTime = performance.now();
-                    timerActive = true;
-                }
-                if (car.step >= car.path.length - 1) {
-                    resetCarState(car);
-                }
-                if (!car.active) {
-                    car.active = true;
-                }
-                button.disabled = true;
-            }
-
+            // --- 事件綁定 ---
             btnStartRed.addEventListener('click', () => startCar(carRed, btnStartRed));
             btnStartYellow.addEventListener('click', () => startCar(carYellow, btnStartYellow));
             btnReset.addEventListener('click', resetSimulation);
             speedSliderRed.addEventListener('input', (e) => { carRed.speed = parseInt(e.target.value, 10); speedValueRed.textContent = carRed.speed; });
             speedSliderYellow.addEventListener('input', (e) => { carYellow.speed = parseInt(e.target.value, 10); speedValueYellow.textContent = carYellow.speed; });
-
-            resetSimulation();
+            
+            // --- 初始啟動 ---
+            resetSimulation(); // 初始調用，會自動執行 updateLayout
             gameLoop();
         });
     </script>
