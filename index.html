@@ -21,30 +21,45 @@
             width: 90%; 
             max-width: 872px; 
             aspect-ratio: 872 / 503;
-            background-image: url('background.png');
+            background-image: url('https://storage.cloud.google.com/chachafufu/background.png');
             background-size: 100% 100%;
             background-repeat: no-repeat;
             border: 2px solid #333;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             overflow: hidden;
+
+            /* --- 關鍵修改 1：啟用容器查詢 --- */
+            /* 將此容器定義為一個查詢容器，讓子元素可以根據它的寬度來調整樣式 */
+            container-type: inline-size;
+            container-name: simulator;
         }
 
         .car {
             position: absolute;
-            width: 20px; 
-            height: 38px;
-            border: 1px solid black;
-            border-radius: 6px;
+            /* --- 關鍵修改 2：使用 cqw 單位取代 px --- */
+            /* 原寬度: 20px -> (20 / 872 * 100) = 2.29cqw */
+            width: 2.29cqw; 
+            /* 原高度: 38px -> (38 / 872 * 100) = 4.35cqw */
+            height: 4.35cqw;
+            border: 1px solid black; /* 1px 邊框太細，縮放時可維持或也用 cqw */
+            /* 原圓角: 6px -> (6 / 872 * 100) = 0.68cqw */
+            border-radius: 0.68cqw; 
             display: flex;
             justify-content: center;
             align-items: flex-start;
-            box-shadow: 0 0 5px rgba(255, 255, 255, 0.7);
+            box-shadow: 0 0 0.5cqw rgba(255, 255, 255, 0.7); /* 5px -> 0.57cqw */
             transform-origin: center center;
             z-index: 10;
         }
         .car::before {
-            content: ''; width: 80%; height: 40%; margin-top: 4px;
-            background: rgba(0,0,0,0.3); border-radius: 3px;
+            content: ''; 
+            width: 80%; 
+            height: 40%; 
+            /* 原間距: 4px -> (4 / 872 * 100) = 0.45cqw */
+            margin-top: 0.45cqw;
+            background: rgba(0,0,0,0.3); 
+            /* 原圓角: 3px -> (3 / 872 * 100) = 0.34cqw */
+            border-radius: 0.34cqw;
         }
 
         #car-red { background-color: #e74c3c; }
@@ -53,23 +68,53 @@
         .traffic-light {
             position: absolute;
             background-color: #2c3e50;
-            padding: 4px;
-            border-radius: 6px;
+            /* --- 關鍵修改 3：讓紅綠燈也使用 cqw --- */
+            /* 原 padding: 4px -> 0.45cqw */
+            padding: 0.45cqw;
+            /* 原圓角: 6px -> 0.68cqw */
+            border-radius: 0.68cqw;
             display: flex;
             flex-direction: column;
-            gap: 3px;
+            /* 原間距: 3px -> 0.34cqw */
+            gap: 0.34cqw;
             z-index: 5;
         }
         .light {
-            width: 15px;
-            height: 15px;
+            /* 原寬高: 15px -> (15 / 872 * 100) = 1.72cqw */
+            width: 1.72cqw;
+            height: 1.72cqw;
             border-radius: 50%;
             background-color: #7f8c8d;
             transition: background-color 0.3s, box-shadow 0.3s;
         }
-        .light.red.active { background-color: #e74c3c; box-shadow: 0 0 8px #e74c3c; }
-        .light.green.active { background-color: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
+        /* 原陰影: 8px -> (8 / 872 * 100) = 0.91cqw */
+        .light.red.active { background-color: #e74c3c; box-shadow: 0 0 0.9cqw #e74c3c; }
+        .light.green.active { background-color: #2ecc71; box-shadow: 0 0 0.9cqw #2ecc71; }
         
+        .collision-icon {
+            position: absolute; 
+            /* --- 關鍵修改 4：碰撞圖示也要縮放 --- */
+            /* 原寬高: 40px -> (40 / 872 * 100) = 4.58cqw */
+            width: 4.58cqw; 
+            height: 4.58cqw; 
+            background-color: #e74c3c;
+            color: white; border-radius: 50%; 
+            /* 原邊框: 3px -> 0.34cqw */
+            border-width: 0.34cqw;
+            border-style: solid;
+            border-color: white;
+            /* 原陰影: 15px -> 1.72cqw */
+            box-shadow: 0 0 1.72cqw rgba(231, 76, 60, 0.8); 
+            display: none;
+            justify-content: center; align-items: center; 
+            /* 原字體大小: 28px -> (28 / 872 * 100) = 3.21cqw */
+            font-size: 3.21cqw;
+            font-weight: bold; font-family: 'Arial', sans-serif; z-index: 20;
+            opacity: 0; transition: opacity 0.3s ease-in-out;
+            user-select: none; pointer-events: none;
+        }
+
+        /* --- 以下為控制面板和媒體查詢，維持不變 --- */
         #control-panel {
             width: 90%; 
             max-width: 872px; 
@@ -136,23 +181,13 @@
             color: #2c3e50; font-size: 1.1em;
         }
 
-        .collision-icon {
-            position: absolute; width: 40px; height: 40px; background-color: #e74c3c;
-            color: white; border-radius: 50%; border: 3px solid white;
-            box-shadow: 0 0 15px rgba(231, 76, 60, 0.8); display: none;
-            justify-content: center; align-items: center; font-size: 28px;
-            font-weight: bold; font-family: 'Arial', sans-serif; z-index: 20;
-            opacity: 0; transition: opacity 0.3s ease-in-out;
-            user-select: none; pointer-events: none;
-        }
-        
         @media (min-width: 992px) {
             body {
                 flex-direction: row;
                 align-items: flex-start;
             }
             #simulator-container {
-                width: 872px;
+                width: 872px; /* 在大螢幕上固定最大寬度 */
             }
             #control-panel {
                 width: 280px;
@@ -161,6 +196,7 @@
     </style>
 </head>
 <body>
+    <!-- HTML 和 JavaScript 維持不變 -->
     <div id="simulator-container">
         <div id="collision-icon" class="collision-icon">!</div>
         <div id="car-red" class="car"></div>
@@ -207,6 +243,8 @@
     </div>
 
     <script>
+        // JavaScript 部分完全不需要修改，因為它處理的是邏輯和 scaled positioning, 
+        // 而我們用 CSS 處理 scaled sizing。兩者完美協作。
         document.addEventListener('DOMContentLoaded', () => {
             // DOM 元素獲取
             const simulatorContainerEl = document.getElementById('simulator-container');
@@ -242,6 +280,8 @@
             
             // 遊戲狀態變數
             let isColliding = false;
+            // 這個碰撞閾值是基於原始 872px 座標系的，所以它不需要改變
+            // 因為 JS 中的碰撞檢測是在原始路徑數據上計算的，與視覺縮放無關。
             const COLLISION_THRESHOLD = 40;
             let timerActive = false;
             let startTime = 0;
@@ -262,11 +302,8 @@
             let carRed = { el: carRedEl, path: redPath, speed: 3, step: 0, active: false, stopAt: [ { step: 12, light: '3' } ], controlTriggers: [ { step: 20, action: () => { setLightState('1', 'red'); setLightState('2', 'red'); }, done: false }, { step: 98, action: () => { setLightState('1', 'green'); setLightState('2', 'green'); }, done: false } ] };
             let carYellow = { el: carYellowEl, path: yellowPath, speed: 3, step: 0, active: false, stopAt: [ { step: 7, light: '1' }, { step: 43, light: '2' } ], controlTriggers: [ { step: 5, action: () => { setLightState('3', 'red'); }, done: false }, { step: 82, action: () => { setLightState('3', 'green'); }, done: false } ] };
             
-            // --- 響應式佈局更新函式 ---
             function updateLayout() {
                 scaleFactor = simulatorContainerEl.offsetWidth / ORIGINAL_WIDTH;
-                
-                // 更新紅綠燈位置
                 for (const id in lights) {
                     const lightData = lights[id];
                     const pos = originalPositions[`traffic-light-${id}`];
@@ -275,8 +312,6 @@
                         lightData.el.style.left = (pos.left * scaleFactor) + 'px';
                     }
                 }
-                
-                // 更新車輛位置
                 [carRed, carYellow].forEach(car => {
                     const pos = car.path[car.step];
                     if (pos) {
@@ -287,7 +322,6 @@
             }
             window.addEventListener('resize', updateLayout);
             
-            // --- 狀態控制函式 ---
             function setLightState(lightId, state) {
                 const lightGroup = lights[lightId];
                 if (!lightGroup) return;
@@ -308,7 +342,6 @@
                 isColliding = false;
             }
             
-            // --- 重置與啟動 ---
             function resetCarState(car) {
                 car.active = false;
                 car.step = 0;
@@ -317,7 +350,6 @@
                 }
                 const pos = car.path[0];
                 const { x, y, angle } = pos;
-                // *** 關鍵修正：重置時必須使用縮放因子 ***
                 car.el.style.left = `${x * scaleFactor - car.el.offsetWidth / 2}px`;
                 car.el.style.top = `${y * scaleFactor - car.el.offsetHeight / 2}px`;
                 car.el.style.transform = `rotate(${angle}deg)`;
@@ -332,7 +364,7 @@
                 btnStartYellow.disabled = false;
                 timerActive = false;
                 timerDisplayEl.textContent = '0.00s';
-                updateLayout(); // 確保所有元素在重置後位置正確
+                updateLayout();
             }
 
             function startCar(car, button) {
@@ -349,7 +381,6 @@
                 button.disabled = true;
             }
 
-            // --- 遊戲核心邏輯 ---
             function moveCar(car) {
                 if (!car.active) return;
                 if (obeyTrafficLights) {
@@ -373,7 +404,6 @@
                 }
                 car.step++;
                 const { x, y, angle } = car.path[car.step];
-                // *** 關鍵修正：移動時也必須使用縮放因子 ***
                 car.el.style.left = `${x * scaleFactor - car.el.offsetWidth / 2}px`;
                 car.el.style.top = `${y * scaleFactor - car.el.offsetHeight / 2}px`;
                 car.el.style.transform = `rotate(${angle}deg)`;
@@ -402,13 +432,12 @@
                     const posYellow = carYellow.path[carYellow.step];
                     const dx = posRed.x - posYellow.x;
                     const dy = posRed.y - posYellow.y;
-                    // *** 關鍵修正：碰撞距離也要縮放 ***
-                    const distance = Math.sqrt(dx * dx + dy * dy) * scaleFactor;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
                     if (distance < COLLISION_THRESHOLD) {
                         if (!isColliding) {
                             const midX = (posRed.x + posYellow.x) / 2;
                             const midY = (posRed.y + posYellow.y) / 2;
-                            showCollisionIcon(midX, midY); // showCollisionIcon 內部已處理縮放
+                            showCollisionIcon(midX, midY);
                         }
                     } else {
                         if (isColliding) { hideCollisionIcon(); }
@@ -420,15 +449,13 @@
                 requestAnimationFrame(gameLoop);
             }
 
-            // --- 事件綁定 ---
             btnStartRed.addEventListener('click', () => startCar(carRed, btnStartRed));
             btnStartYellow.addEventListener('click', () => startCar(carYellow, btnStartYellow));
             btnReset.addEventListener('click', resetSimulation);
             speedSliderRed.addEventListener('input', (e) => { carRed.speed = parseInt(e.target.value, 10); speedValueRed.textContent = carRed.speed; });
             speedSliderYellow.addEventListener('input', (e) => { carYellow.speed = parseInt(e.target.value, 10); speedValueYellow.textContent = carYellow.speed; });
             
-            // --- 初始啟動 ---
-            resetSimulation(); // 初始調用，會自動執行 updateLayout
+            resetSimulation();
             gameLoop();
         });
     </script>
